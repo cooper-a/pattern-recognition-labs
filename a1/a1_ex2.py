@@ -2,29 +2,23 @@ import torchvision.datasets as datasets
 import numpy as np
 from sklearn.decomposition import PCA
 
-mnist_trainset = datasets.MNIST(root='./data', train=True, download=True, transform=None)
 
-filtered_mnist_train = []
-for image in mnist_trainset:
-    if image[1] == 0 or image[1] == 1:
-        filtered_mnist_train.append(image)
+class MED_Classifier:
+    def __init__(self, X, Y):
+        self.X_clf = X
+        self.Y_clf = Y
+        self.prototype0 = np.mean(X[Y == 0], axis=0)
+        self.prototype1 = np.mean(X[Y == 1], axis=0)
 
-X = [np.asarray(val[0]).flatten() for val in filtered_mnist_train]
-Y = [val[1] for val in filtered_mnist_train]
-
-pca = PCA(n_components=20)
-X_PC = pca.fit_transform(X)
-
-
-def minimum_euclidian_clf(X, x):
-    # Implement the MED classifier
-    # X is a list of vectors
-    # x is the vector to classify
-    # returns the most common class among the k nearest neighbors
-    dist = []
-    for i in range(len(X)):
-        dist.append((np.linalg.norm(X[i] - x), Y[i]))
-    # look for the closest neighbor
-    dist.sort(key=lambda tup: tup[0])
-    return dist[0][1]
-
+    def classify(self, x):
+        # Implement the MED classifier
+        # x is a single vector to classify
+        # returns the classification of x by nearest euclidean distance to prototype
+        if self.X_clf is None or self.Y_clf is None:
+            raise Exception("Classifier not trained")
+        dist0 = np.linalg.norm(self.prototype0 - x)
+        dist1 = np.linalg.norm(self.prototype1 - x)
+        if dist0 < dist1:
+            return 0
+        else:
+            return 1
