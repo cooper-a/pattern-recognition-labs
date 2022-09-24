@@ -45,6 +45,8 @@ class KNNClassifier:
             return 1
 
     def plot_decision_boundary(self, k, dist_func=np.linalg.norm, decision_weighted=False, h=50):
+        if self.X_clf is None or self.Y_clf is None:
+            raise Exception("Classifier not trained")
         x_min, x_max = self.X_clf[:, 0].min() - 1, self.X_clf[:, 0].max() + 1
         y_min, y_max = self.X_clf[:, 1].min() - 1, self.X_clf[:, 1].max() + 1
         xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
@@ -64,6 +66,7 @@ class KNNClassifier:
         red_patch = mpatches.Patch(color='red', label='Class 1')
         blue_patch = mpatches.Patch(color='blue', label='Class 0')
         plt.legend(handles=[red_patch, blue_patch])
+        plt.savefig(f'{k}-NN_decision_boundary.png')
         plt.show()
 
 

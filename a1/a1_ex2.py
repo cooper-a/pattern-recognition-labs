@@ -33,18 +33,34 @@ class MED_Classifier:
         else:
             return 1
 
-    def plot_decision_boundary(self):
-        if self.X_clf is None or self.Y_clf is None:
-            raise Exception("Classifier not trained")
-        # plot the decision boundary in 2d
-        # you can use the following code to plot the prototypes
-        # plot the line that is equidistant from both prototypes
-        x = np.linspace(np.max(self.X_clf[0]), np.max(self.X_clf[1]), 1000)
-        y = (self.prototype0[1] - self.prototype1[1]) / (self.prototype0[0] - self.prototype1[0]) * (x - self.prototype0[0]) + self.prototype0[1]
-        plt.plot(x, y, 'k-')
-        plt.scatter(self.prototype0[0], self.prototype0[1], marker='x', color='red')
-        plt.scatter(self.prototype1[0], self.prototype1[1], marker='x', color='blue')
-        plt.show()
+    def plot_decision_boundary(self, h=50):
+        x_min, x_max = self.X_clf[:, 0].min() - 1, self.X_clf[:, 0].max() + 1
+        y_min, y_max = self.X_clf[:, 1].min() - 1, self.X_clf[:, 1].max() + 1
+        xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
+        Z = np.zeros(xx.shape)
+        for i in range(xx.shape[0]):
+            for j in range(xx.shape[1]):
+                Z[i, j] = self.classify(np.array([xx[i, j], yy[i, j]]))
+        plt.contourf(xx, yy, Z, cmap=plt.cm.coolwarm, alpha=0.8)
+        plt.scatter(self.X_clf[:, 0], self.X_clf[:, 1], c=self.Y_clf, cmap=plt.cm.coolwarm)
+        plt.xlabel('PC1')
+        plt.ylabel('PC2')
+        plt.xlim(xx.min(), xx.max())
+        plt.ylim(yy.min(), yy.max())
+
+    # def plot_decision_boundary(self):
+    #     if self.X_clf is None or self.Y_clf is None:
+    #         raise Exception("Classifier not trained")
+    #     # plot the decision boundary in 2d
+    #     # you can use the following code to plot the prototypes
+    #     # plot the line that is equidistant from both prototypes
+    #     z1 = np.array(self.prototype0[0], self.prototype0[1])
+    #     z2 = np.array(self.prototype1[0], self.prototype1[1])
+    #     0 = np.transpose(z1-z2)*(x, y) + 1/2*(np.transpose(z1)*z1 - np.transpose(z2)*z2)
+    #     plt.plot(x, y, 'k-')
+    #     plt.scatter(self.prototype0[0], self.prototype0[1], marker='x', color='red')
+    #     plt.scatter(self.prototype1[0], self.prototype1[1], marker='x', color='blue')
+    #     plt.show()
 
 # class GED_Classifier:
 #     def __init__(self, X, Y):
