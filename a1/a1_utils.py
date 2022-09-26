@@ -15,3 +15,12 @@ def prep_mnist(mnist_set, n_components):
     pca = PCA(n_components=n_components)
     X_PC = pca.fit_transform(X)
     return (X_PC, Y)
+
+def confusion_matrix(Y, Y_hat):
+    # Y is the ground truth
+    # Y_hat is the predicted labels
+    # returns the confusion matrix
+    cm = np.zeros((2, 2))
+    for i in range(len(Y)):
+        cm[Y[i], Y_hat[i]] += 1
+    return cm

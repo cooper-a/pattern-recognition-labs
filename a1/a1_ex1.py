@@ -10,7 +10,7 @@ class KNNClassifier:
         self.X_clf = np.array(X)
         self.Y_clf = np.array(Y)
 
-    def classify(self, x, k, dist_func=np.linalg.norm, decision_weighted=False):
+    def classify(self, x, k, dist_func=np.linalg.norm, decision_weighted=False, count=False):
         # Implement the k-NN classifier
         # x is a single vector to classify
         # k is the number of neighbors to consider
@@ -32,6 +32,12 @@ class KNNClassifier:
                     count0 += 1 / distances[k_nearest_indices[i]]
                 else:
                     count1 += 1 / distances[k_nearest_indices[i]]
+        elif not count:
+            for i in range(len(k_nearest_indices)):
+                if k_nearest_labels[i] == 0:
+                    count0 += distances[k_nearest_indices[i]]
+                else:
+                    count1 += distances[k_nearest_indices[i]]
         else:
             for i in range(len(k_nearest_indices)):
                 if k_nearest_labels[i] == 0:
@@ -44,16 +50,18 @@ class KNNClassifier:
         else:
             return 1
 
-    def plot_decision_boundary(self, k, dist_func=np.linalg.norm, decision_weighted=False, h=50):
+    def plot_decision_boundary(self, k, dist_func=np.linalg.norm, decision_weighted=False, count=False, h=25):
         if self.X_clf is None or self.Y_clf is None:
             raise Exception("Classifier not trained")
         x_min, x_max = self.X_clf[:, 0].min() - 1, self.X_clf[:, 0].max() + 1
         y_min, y_max = self.X_clf[:, 1].min() - 1, self.X_clf[:, 1].max() + 1
         xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
+        print(xx.shape)
+        print(yy.shape)
         Z = np.zeros(xx.shape)
         for i in range(xx.shape[0]):
             for j in range(xx.shape[1]):
-                Z[i, j] = self.classify(np.array([xx[i, j], yy[i, j]]), k, dist_func, decision_weighted)
+                Z[i, j] = self.classify(np.array([xx[i, j], yy[i, j]]), k, dist_func, decision_weighted, count)
         plt.contourf(xx, yy, Z, cmap=plt.cm.coolwarm, alpha=0.8)
         plt.scatter(self.X_clf[:, 0], self.X_clf[:, 1], c=self.Y_clf, cmap=plt.cm.coolwarm)
         plt.xlabel('PC1')
@@ -88,6 +96,13 @@ def main():
         for i in range(len(X_test_PC)):
             pred = knn.classify(X_test_PC[i], k_val)
             preds_results[k_val].append((pred, Y_test[i]))
+
+    for k_val in preds_results:
+        correct = 0
+        for pred in preds_results[k_val]:
+            if pred[0] == pred[1]:
+                correct += 1
+        print(f"KNN with k={k_val} is {round(correct / len(preds_results[k_val]), 6 * 100)}% accurate")
 
 
 if __name__ == "__main__":

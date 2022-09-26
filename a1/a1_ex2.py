@@ -9,9 +9,9 @@ class MED_Classifier:
     def __init__(self, X, Y):
         self.X_clf = X
         self.Y_clf = Y
-        self.prototypes = self.compute_prototypes(X, Y)
+        self.prototypes = self.__compute_prototypes(X, Y)
 
-    def compute_prototypes(self, X, Y):
+    def __compute_prototypes(self, X, Y):
         # Compute the prototypes
         # X is a list of vectors
         # Y is a list of labels
@@ -20,12 +20,15 @@ class MED_Classifier:
         self.prototype1 = np.mean([X[i] for i in range(len(X)) if Y[i] == 1], axis=0)
         return [self.prototype0, self.prototype1]
 
+    def __check_if_clf_trained(self):
+        if self.X_clf is None or self.Y_clf is None:
+            raise Exception("Classifier not trained")
+
     def classify(self, x):
         # Implement the MED classifier
         # x is a single vector to classify
         # returns the classification of x by nearest euclidean distance to prototype
-        if self.X_clf is None or self.Y_clf is None:
-            raise Exception("Classifier not trained")
+        self.__check_if_clf_trained()
         dist0 = np.linalg.norm(self.prototype0 - x)
         dist1 = np.linalg.norm(self.prototype1 - x)
         if dist0 < dist1:
@@ -33,7 +36,10 @@ class MED_Classifier:
         else:
             return 1
 
-    def plot_decision_boundary(self, h=50):
+    def plot_decision_boundary(self, h=5):
+        self.__check_if_clf_trained()
+        if self.X_clf.shape[1] != 2:
+            raise Exception("Decision boundary can only be plotted for 2D data")
         x_min, x_max = self.X_clf[:, 0].min() - 1, self.X_clf[:, 0].max() + 1
         y_min, y_max = self.X_clf[:, 1].min() - 1, self.X_clf[:, 1].max() + 1
         xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
@@ -62,8 +68,23 @@ class MED_Classifier:
     #     plt.scatter(self.prototype1[0], self.prototype1[1], marker='x', color='blue')
     #     plt.show()
 
-# class GED_Classifier:
-#     def __init__(self, X, Y):
+class GED_Classifier:
+    def __init__(self, X, Y):
+        # compute covariance matrix
+        c = np.cov(X, rowvar=False)
+        # compute the mean of each class
+        self.mean0 = np.mean([X[i] for i in range(len(X)) if Y[i] == 0], axis=0)
+        self.mean1 = np.mean([X[i] for i in range(len(X)) if Y[i] == 1], axis=0)
+        # compute the eigenvalues and eigenvectors of the covariance matrix
+        self.eigvals, self.eigvecs = np.linalg.eig(c)
+        # compute the whitening matrix
+        self.whitening_matrix = np.dot(np.diag(1 / np.sqrt(self.eigvals)), self.eigvecs.T)
+        # compute the mean of each class in the whitened space
+        self.mean0_w = np.dot(self.whitening_matrix, self.mean0)
+        self.mean1_w = np.dot(self.whitening_matrix, self.mean1)
+        # compute the covariance matrix of each class in the whitened space
+
+
 
 def main():
     mnist_trainset = datasets.MNIST(root='./data', train=True, download=True, transform=None)
@@ -71,5 +92,34 @@ def main():
     X_PC, Y = prep_mnist(mnist_trainset, 20)
     X_test_PC, Y_test = prep_mnist(mnist_testset, 20)
 
+    # MED classifier
     med_clf = MED_Classifier(X_PC, Y)
-    med_clf.plot_decision_boundary()
+
+    preds_results = []
+    for i in range(len(X_test_PC)):
+        pred = med_clf.classify(X_test_PC[i])
+        preds_results.append((pred, Y_test[i]))
+
+    correct = 0
+    for pred in preds_results:
+        if pred[0] == pred[1]:
+            correct += 1
+
+    print(f"Accuracy for MED Classifier: {round(correct/len(preds_results) * 100, 6)}%")
+
+    # decision boundary for MED PCA 2D
+    X_PC_2D, Y = prep_mnist(mnist_trainset, 2)
+    med_clf_2D = MED_Classifier(X_PC_2D, Y)
+    med_clf_2D.plot_decision_boundary()
+    plt.show()
+    plt.savefig('med_decision_boundary.png')
+
+    # GED classifier
+    ged_clf = GED_Classifier(X_PC, Y)
+
+
+
+
+
+if __name__ == "__main__":
+    main()
