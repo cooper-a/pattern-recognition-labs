@@ -10,7 +10,7 @@ class KNNClassifier:
         self.X_clf = np.array(X)
         self.Y_clf = np.array(Y)
 
-    def classify(self, x, k, dist_func=np.linalg.norm, decision_weighted=False, count=False):
+    def classify(self, x, k, dist_func=np.linalg.norm, decision_weighted=True):
         # Implement the k-NN classifier
         # x is a single vector to classify
         # k is the number of neighbors to consider
@@ -26,18 +26,14 @@ class KNNClassifier:
         # count the number of 0s and 1s
         count0 = 0
         count1 = 0
+        # protect against divide by zero
+        epsilon = 1e-10
         if decision_weighted:
             for i in range(len(k_nearest_indices)):
                 if k_nearest_labels[i] == 0:
-                    count0 += 1 / distances[k_nearest_indices[i]]
+                    count0 += 1 / (distances[k_nearest_indices[i]] + epsilon)
                 else:
-                    count1 += 1 / distances[k_nearest_indices[i]]
-        elif not count:
-            for i in range(len(k_nearest_indices)):
-                if k_nearest_labels[i] == 0:
-                    count0 += distances[k_nearest_indices[i]]
-                else:
-                    count1 += distances[k_nearest_indices[i]]
+                    count1 += 1 / (distances[k_nearest_indices[i]] + epsilon)
         else:
             for i in range(len(k_nearest_indices)):
                 if k_nearest_labels[i] == 0:
@@ -50,7 +46,7 @@ class KNNClassifier:
         else:
             return 1
 
-    def plot_decision_boundary(self, k, dist_func=np.linalg.norm, decision_weighted=False, count=False, h=25):
+    def plot_decision_boundary(self, k, dist_func=np.linalg.norm, decision_weighted=True, h=25):
         if self.X_clf is None or self.Y_clf is None:
             raise Exception("Classifier not trained")
         x_min, x_max = self.X_clf[:, 0].min() - 1, self.X_clf[:, 0].max() + 1
@@ -61,7 +57,7 @@ class KNNClassifier:
         Z = np.zeros(xx.shape)
         for i in range(xx.shape[0]):
             for j in range(xx.shape[1]):
-                Z[i, j] = self.classify(np.array([xx[i, j], yy[i, j]]), k, dist_func, decision_weighted, count)
+                Z[i, j] = self.classify(np.array([xx[i, j], yy[i, j]]), k, dist_func, decision_weighted)
         plt.contourf(xx, yy, Z, cmap=plt.cm.coolwarm, alpha=0.8)
         plt.scatter(self.X_clf[:, 0], self.X_clf[:, 1], c=self.Y_clf, cmap=plt.cm.coolwarm)
         plt.xlabel('PC1')

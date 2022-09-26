@@ -54,19 +54,24 @@ class MED_Classifier:
         plt.xlim(xx.min(), xx.max())
         plt.ylim(yy.min(), yy.max())
 
-    # def plot_decision_boundary(self):
-    #     if self.X_clf is None or self.Y_clf is None:
-    #         raise Exception("Classifier not trained")
-    #     # plot the decision boundary in 2d
-    #     # you can use the following code to plot the prototypes
-    #     # plot the line that is equidistant from both prototypes
-    #     z1 = np.array(self.prototype0[0], self.prototype0[1])
-    #     z2 = np.array(self.prototype1[0], self.prototype1[1])
-    #     0 = np.transpose(z1-z2)*(x, y) + 1/2*(np.transpose(z1)*z1 - np.transpose(z2)*z2)
-    #     plt.plot(x, y, 'k-')
-    #     plt.scatter(self.prototype0[0], self.prototype0[1], marker='x', color='red')
-    #     plt.scatter(self.prototype1[0], self.prototype1[1], marker='x', color='blue')
-    #     plt.show()
+    def plot_decision_boundary_analytical(self):
+        self.__check_if_clf_trained()
+        if self.X_clf.shape[1] != 2:
+            raise Exception("Decision boundary can only be plotted for 2D data")
+        # plot the decision boundary in 2d
+        # you can use the following code to plot the prototypes
+        # plot the line that is equidistant from both prototypes
+        z1 = np.array([self.prototype0[0], self.prototype0[1]])
+        z2 = np.array([self.prototype1[0], self.prototype1[1]])
+        print(z1)
+        print(z2)
+        x = np.linspace(-1500, 1500, 100)
+        y = (z1[1] - z2[1]) / (z1[0] - z2[0]) * (x - z1[0]) + z1[1]
+        # 0 = np.transpose(z1-z2)*(x, y) + 1/2*(np.transpose(z1)*z1 - np.transpose(z2)*z2)
+        plt.plot(x, y, 'k-')
+        plt.scatter(self.prototype0[0], self.prototype0[1], marker='x', color='red')
+        plt.scatter(self.prototype1[0], self.prototype1[1], marker='x', color='blue')
+        plt.show()
 
 class GED_Classifier:
     def __init__(self, X, Y):
@@ -113,6 +118,10 @@ def main():
     med_clf_2D.plot_decision_boundary()
     plt.show()
     plt.savefig('med_decision_boundary.png')
+    plt.clf()
+    med_clf_2D.plot_decision_boundary_analytical()
+    plt.show()
+    plt.savefig('med_decision_boundary_analytical.png')
 
     # GED classifier
     ged_clf = GED_Classifier(X_PC, Y)
