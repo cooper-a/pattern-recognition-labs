@@ -2,6 +2,7 @@ import torchvision.datasets as datasets
 import numpy as np
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 from a1_utils import prep_mnist
 
 
@@ -53,25 +54,56 @@ class MED_Classifier:
         plt.ylabel('PC2')
         plt.xlim(xx.min(), xx.max())
         plt.ylim(yy.min(), yy.max())
+        red_patch = mpatches.Patch(color='red', label='Class 1')
+        blue_patch = mpatches.Patch(color='blue', label='Class 0')
+        plt.legend(handles=[red_patch, blue_patch])
+        plt.title('MED decision boundary')
+        plt.savefig(f'MED_decision_boundary.png')
+        plt.show()
 
     def plot_decision_boundary_analytical(self):
         self.__check_if_clf_trained()
         if self.X_clf.shape[1] != 2:
             raise Exception("Decision boundary can only be plotted for 2D data")
-        # plot the decision boundary in 2d
-        # you can use the following code to plot the prototypes
-        # plot the line that is equidistant from both prototypes
-        z1 = np.array([self.prototype0[0], self.prototype0[1]])
-        z2 = np.array([self.prototype1[0], self.prototype1[1]])
-        print(z1)
-        print(z2)
-        x = np.linspace(-1500, 1500, 100)
-        y = (z1[1] - z2[1]) / (z1[0] - z2[0]) * (x - z1[0]) + z1[1]
-        # 0 = np.transpose(z1-z2)*(x, y) + 1/2*(np.transpose(z1)*z1 - np.transpose(z2)*z2)
-        plt.plot(x, y, 'k-')
-        plt.scatter(self.prototype0[0], self.prototype0[1], marker='x', color='red')
-        plt.scatter(self.prototype1[0], self.prototype1[1], marker='x', color='blue')
+        weights, bias = self.determine_decision_boundary_analytical()
+        w1 = weights[0][0]
+        w2 = weights[0][1]
+        bias = bias[0]
+        x = np.linspace(self.X_clf[:, 0].min(), self.X_clf[:, 0].max(), 100)
+        y = (-1 * bias / w2) - (w1 / w2) * x
+        plt.plot(x, y, 'r')
+        plt.scatter(self.X_clf[:, 0], self.X_clf[:, 1], c=self.Y_clf, cmap=plt.cm.coolwarm)
+        plt.xlabel('PC1')
+        plt.ylabel('PC2')
+        plt.xlim(self.X_clf[:, 0].min(), self.X_clf[:, 0].max())
+        plt.ylim(self.X_clf[:, 1].min(), self.X_clf[:, 1].max())
+        red_patch = mpatches.Patch(color='red', label='Class 1')
+        blue_patch = mpatches.Patch(color='blue', label='Class 0')
+        plt.legend(handles=[red_patch, blue_patch])
+        plt.title('MED decision boundary analytical')
+        plt.savefig(f'MED_decision_boundary_analytical.png')
         plt.show()
+
+    def determine_decision_boundary_analytical(self):
+        # in form of w1x1 + w2x2 + b = 0
+        self.__check_if_clf_trained()
+        prototype0 = self.prototype0.reshape(self.prototype0.shape[0], 1)
+        prototype1 = self.prototype1.reshape(self.prototype0.shape[0], 1)
+        weights = (prototype0 - prototype1).T
+        bias = 0.5 * (np.matmul(prototype1.T, prototype1) - np.matmul(prototype0.T, prototype0))
+        return weights, bias
+
+    def print_decision_boundary_analytical(self):
+        self.__check_if_clf_trained()
+        weights, bias = self.determine_decision_boundary_analytical()
+        equation_string = "Decision boundary equation: "
+        for i in range(len(weights[0])):
+            equation_string += f"{round(weights[0][i], 3)}x{i + 1} + "
+        equation_string += f"{round(bias[0][0], 3)} = 0"
+        print(equation_string)
+
+
+
 
 class GED_Classifier:
     def __init__(self, X, Y):
@@ -100,6 +132,7 @@ def main():
     # MED classifier
     med_clf = MED_Classifier(X_PC, Y)
 
+    med_clf.print_decision_boundary_analytical()
     preds_results = []
     for i in range(len(X_test_PC)):
         pred = med_clf.classify(X_test_PC[i])
@@ -109,23 +142,32 @@ def main():
     for pred in preds_results:
         if pred[0] == pred[1]:
             correct += 1
+    print(f"Accuracy for 20D MED Classifier: {round(correct/len(preds_results) * 100, 3)}%")
 
-    print(f"Accuracy for MED Classifier: {round(correct/len(preds_results) * 100, 6)}%")
 
     # decision boundary for MED PCA 2D
     X_PC_2D, Y = prep_mnist(mnist_trainset, 2)
+    X_test_PC_2D, Y_test = prep_mnist(mnist_testset, 2)
     med_clf_2D = MED_Classifier(X_PC_2D, Y)
-    med_clf_2D.plot_decision_boundary()
-    plt.show()
-    plt.savefig('med_decision_boundary.png')
-    plt.clf()
+    print("Plotting decision boundary for 2D MED Classifier")
     med_clf_2D.plot_decision_boundary_analytical()
-    plt.show()
-    plt.savefig('med_decision_boundary_analytical.png')
+    med_clf_2D.plot_decision_boundary()
+    med_clf_2D.print_decision_boundary_analytical()
 
-    # GED classifier
-    ged_clf = GED_Classifier(X_PC, Y)
+    preds_results = []
+    for i in range(len(X_test_PC_2D)):
+        pred = med_clf_2D.classify(X_test_PC_2D[i])
+        preds_results.append((pred, Y_test[i]))
 
+    correct = 0
+    for pred in preds_results:
+        if pred[0] == pred[1]:
+            correct += 1
+
+    print(f"Accuracy for 2D MED Classifier: {round(correct / len(preds_results) * 100, 3)}%")
+
+    # # GED classifier
+    # ged_clf = GED_Classifier(X_PC, Y)
 
 
 
