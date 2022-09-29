@@ -1,6 +1,8 @@
 from sklearn.decomposition import PCA
 import numpy as np
+import pathlib
 
+IMG_PATH = str(pathlib.Path(__file__).parent.resolve() / 'images') + "/"
 
 def prep_mnist(mnist_set, n_components):
     # should we normalize the data?

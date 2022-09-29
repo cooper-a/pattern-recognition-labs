@@ -1,10 +1,9 @@
 import torchvision.datasets as datasets
 import numpy as np
-from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
-from a1_utils import prep_mnist
-
+from a1_utils import prep_mnist, IMG_PATH, confusion_matrix
+from pathlib import Path
 
 class MED_Classifier:
     def __init__(self, X, Y):
@@ -58,7 +57,9 @@ class MED_Classifier:
         blue_patch = mpatches.Patch(color='blue', label='Class 0')
         plt.legend(handles=[red_patch, blue_patch])
         plt.title('MED decision boundary')
-        plt.savefig(f'MED_decision_boundary.png')
+        Path(IMG_PATH).mkdir(parents=True, exist_ok=True)
+        path = IMG_PATH + 'MED_decision_boundary.png'
+        plt.savefig(path)
         plt.show()
 
     def plot_decision_boundary_analytical(self):
@@ -81,7 +82,9 @@ class MED_Classifier:
         blue_patch = mpatches.Patch(color='blue', label='Class 0')
         plt.legend(handles=[red_patch, blue_patch])
         plt.title('MED decision boundary analytical')
-        plt.savefig(f'MED_decision_boundary_analytical.png')
+        Path(IMG_PATH).mkdir(parents=True, exist_ok=True)
+        path = IMG_PATH + 'MED_decision_boundary_analytical.png'
+        plt.savefig(path)
         plt.show()
 
     def determine_decision_boundary_analytical(self):

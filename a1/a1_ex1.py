@@ -2,8 +2,8 @@ import torchvision.datasets as datasets
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
-from a1_utils import prep_mnist
-
+from a1_utils import prep_mnist, IMG_PATH, confusion_matrix
+from pathlib import Path
 
 class KNNClassifier:
     def __init__(self, X, Y):
@@ -52,8 +52,6 @@ class KNNClassifier:
         x_min, x_max = self.X_clf[:, 0].min() - 1, self.X_clf[:, 0].max() + 1
         y_min, y_max = self.X_clf[:, 1].min() - 1, self.X_clf[:, 1].max() + 1
         xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
-        print(xx.shape)
-        print(yy.shape)
         Z = np.zeros(xx.shape)
         for i in range(xx.shape[0]):
             for j in range(xx.shape[1]):
@@ -70,7 +68,9 @@ class KNNClassifier:
         red_patch = mpatches.Patch(color='red', label='Class 1')
         blue_patch = mpatches.Patch(color='blue', label='Class 0')
         plt.legend(handles=[red_patch, blue_patch])
-        plt.savefig(f'{k}-NN_decision_boundary.png')
+        Path(IMG_PATH).mkdir(parents=True, exist_ok=True)
+        path = IMG_PATH + f"{k}-NN_decision_boundary.png"
+        plt.savefig(path)
         plt.show()
 
 
@@ -98,7 +98,7 @@ def main():
         for pred in preds_results[k_val]:
             if pred[0] == pred[1]:
                 correct += 1
-        print(f"KNN with k={k_val} is {round(correct / len(preds_results[k_val]), 6 * 100)}% accurate")
+        print(f"KNN with k={k_val} is {round((correct / len(preds_results[k_val]) * 100), 3)}% accurate")
 
 
 if __name__ == "__main__":
