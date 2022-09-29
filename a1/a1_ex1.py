@@ -2,7 +2,7 @@ import torchvision.datasets as datasets
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
-from a1_utils import prep_mnist, IMG_PATH, confusion_matrix
+from a1_utils import prep_mnist, IMG_PATH, confusion_matrix, compute_accuracy, compute_error
 from pathlib import Path
 
 class KNNClassifier:
@@ -15,9 +15,7 @@ class KNNClassifier:
         # x is a single vector to classify
         # k is the number of neighbors to consider
         # returns the most common class among the k nearest neighbors
-        if self.X_clf is None or self.Y_clf is None:
-            raise Exception("Classifier not trained")
-
+        self.__check_if_clf_trained()
         # Vectorized implementation for speed
         distances = dist_func(self.X_clf - x, axis=1)
         sorted_indices = np.argsort(distances)
@@ -46,9 +44,16 @@ class KNNClassifier:
         else:
             return 1
 
-    def plot_decision_boundary(self, k, dist_func=np.linalg.norm, decision_weighted=True, h=25):
+    def __check_if_clf_trained(self):
         if self.X_clf is None or self.Y_clf is None:
             raise Exception("Classifier not trained")
+
+    def predict(self, X, k, dist_func=np.linalg.norm, decision_weighted=True):
+        self.__check_if_clf_trained()
+        return [self.classify(x, k, dist_func=dist_func, decision_weighted=decision_weighted) for x in X]
+
+    def plot_decision_boundary(self, k, dist_func=np.linalg.norm, decision_weighted=True, h=25):
+        self.__check_if_clf_trained()
         x_min, x_max = self.X_clf[:, 0].min() - 1, self.X_clf[:, 0].max() + 1
         y_min, y_max = self.X_clf[:, 1].min() - 1, self.X_clf[:, 1].max() + 1
         xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
@@ -85,21 +90,15 @@ def main():
     X_test_PC, Y_test = prep_mnist(mnist_testset, 2)
 
     knn = KNNClassifier(X_PC, Y)
-    preds_results = {}
     for k_val in K_VALUES:
         knn.plot_decision_boundary(k_val)
-        preds_results[k_val] = []
-        for i in range(len(X_test_PC)):
-            pred = knn.classify(X_test_PC[i], k_val)
-            preds_results[k_val].append((pred, Y_test[i]))
-
-    for k_val in preds_results:
-        correct = 0
-        for pred in preds_results[k_val]:
-            if pred[0] == pred[1]:
-                correct += 1
-        print(f"KNN with k={k_val} is {round((correct / len(preds_results[k_val]) * 100), 3)}% accurate")
-
+        Y_hat = knn.predict(X_test_PC, k_val)
+        accuracy = compute_accuracy(Y_test, Y_hat)
+        error = compute_error(Y_test, Y_hat)
+        cf = confusion_matrix(Y_test, Y_hat)
+        print(f"KNN with k={k_val} is {round(accuracy * 100, 3)}% accurate")
+        print(f"KNN with k={k_val} has an error of {round(error, 6)}")
+        print(f"Confusion matrix for KNN with k={k_val}: \n{cf}")
 
 if __name__ == "__main__":
     main()

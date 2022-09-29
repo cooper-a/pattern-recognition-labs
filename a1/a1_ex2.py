@@ -2,7 +2,7 @@ import torchvision.datasets as datasets
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
-from a1_utils import prep_mnist, IMG_PATH, confusion_matrix
+from a1_utils import prep_mnist, IMG_PATH, confusion_matrix, compute_accuracy, compute_error
 from pathlib import Path
 
 class MED_Classifier:
@@ -35,6 +35,11 @@ class MED_Classifier:
             return 0
         else:
             return 1
+
+    def predict(self, X):
+        # X is a list of data points
+        self.__check_if_clf_trained()
+        return [self.classify(x) for x in X]
 
     def plot_decision_boundary(self, h=5):
         self.__check_if_clf_trained()
@@ -106,24 +111,66 @@ class MED_Classifier:
         print(equation_string)
 
 
-
-
 class GED_Classifier:
     def __init__(self, X, Y):
-        # compute covariance matrix
-        c = np.cov(X, rowvar=False)
+        X0 = [X[i] for i in range(len(X)) if Y[i] == 0]
+        X1 = [X[i] for i in range(len(X)) if Y[i] == 1]
         # compute the mean of each class
-        self.mean0 = np.mean([X[i] for i in range(len(X)) if Y[i] == 0], axis=0)
-        self.mean1 = np.mean([X[i] for i in range(len(X)) if Y[i] == 1], axis=0)
-        # compute the eigenvalues and eigenvectors of the covariance matrix
-        self.eigvals, self.eigvecs = np.linalg.eig(c)
-        # compute the whitening matrix
-        self.whitening_matrix = np.dot(np.diag(1 / np.sqrt(self.eigvals)), self.eigvecs.T)
-        # compute the mean of each class in the whitened space
-        self.mean0_w = np.dot(self.whitening_matrix, self.mean0)
-        self.mean1_w = np.dot(self.whitening_matrix, self.mean1)
-        # compute the covariance matrix of each class in the whitened space
+        self.mean0 = np.mean(X0, axis=0)
+        self.mean1 = np.mean(X1, axis=0)
+        self.covariance0 = np.cov(X0, rowvar=False)
+        self.covariance1 = np.cov(X1, rowvar=False)
+        self.covariance0_inverse = np.linalg.inv(self.covariance0)
+        self.covariance1_inverse = np.linalg.inv(self.covariance1)
+        self.X_clf = X
+        self.Y_clf = Y
 
+    def __check_if_clf_trained(self):
+        if self.X_clf is None or self.Y_clf is None:
+            raise Exception("Classifier not trained")
+
+    def classify(self, x):
+        dist0 = np.sqrt(((x - self.mean0).T @ self.covariance0_inverse @ (x - self.mean0)))
+        dist1 = np.sqrt(((x - self.mean1).T @ self.covariance1_inverse @ (x - self.mean1)))
+        if dist0 < dist1:
+            return 0
+        else:
+            return 1
+
+    def predict(self, X):
+        # X is a list of data points
+        self.__check_if_clf_trained()
+        return [self.classify(x) for x in X]
+
+    def decision_boundary_fct(self, x1, x2):
+        x = np.array([x1, x2])
+        return np.sqrt(((x - self.mean0).T @ self.covariance0_inverse @ (x - self.mean0))) - np.sqrt(
+            ((x - self.mean1).T @ self.covariance1_inverse @ (x - self.mean1)))
+
+    def plot_decision_boundary_analytical(self, h=5):
+        if self.X_clf.shape[1] != 2:
+            raise Exception("Decision boundary can only be plotted for 2D data")
+        x_min, x_max = self.X_clf[:, 0].min() - 1, self.X_clf[:, 0].max() + 1
+        y_min, y_max = self.X_clf[:, 1].min() - 1, self.X_clf[:, 1].max() + 1
+        xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
+        Z = np.zeros(xx.shape)
+        for i in range(xx.shape[0]):
+            for j in range(xx.shape[1]):
+                Z[i, j] = self.decision_boundary_fct(xx[i, j], yy[i, j])
+        plt.contour(xx, yy, Z, levels=(0,), colors='k')
+        plt.scatter(self.X_clf[:, 0], self.X_clf[:, 1], c=self.Y_clf, cmap=plt.cm.coolwarm)
+        plt.xlabel('PC1')
+        plt.ylabel('PC2')
+        plt.xlim(xx.min(), xx.max())
+        plt.ylim(yy.min(), yy.max())
+        red_patch = mpatches.Patch(color='red', label='Class 1')
+        blue_patch = mpatches.Patch(color='blue', label='Class 0')
+        plt.legend(handles=[red_patch, blue_patch])
+        plt.title('GED decision boundary analytical')
+        Path(IMG_PATH).mkdir(parents=True, exist_ok=True)
+        path = IMG_PATH + 'GED_decision_boundary_analytical.png'
+        plt.savefig(path)
+        plt.show()
 
 
 def main():
@@ -132,48 +179,58 @@ def main():
     X_PC, Y = prep_mnist(mnist_trainset, 20)
     X_test_PC, Y_test = prep_mnist(mnist_testset, 20)
 
-    # MED classifier
+    # MED classifier 20D
     med_clf = MED_Classifier(X_PC, Y)
 
     med_clf.print_decision_boundary_analytical()
-    preds_results = []
-    for i in range(len(X_test_PC)):
-        pred = med_clf.classify(X_test_PC[i])
-        preds_results.append((pred, Y_test[i]))
+    Y_hat = med_clf.predict(X_test_PC)
+    accuracy = compute_accuracy(Y_hat, Y_test)
+    cf = confusion_matrix(Y_hat, Y_test)
+    error = compute_error(Y_hat, Y_test)
+    print(f"Accuracy for 20D MED Classifier: {round(accuracy * 100, 3)}%")
+    print(f"Error for 20D MED Classifier: {round(error, 6)}")
+    print(f"Confusion matrix for 20D MED Classifier: \n{cf}")
 
-    correct = 0
-    for pred in preds_results:
-        if pred[0] == pred[1]:
-            correct += 1
-    print(f"Accuracy for 20D MED Classifier: {round(correct/len(preds_results) * 100, 3)}%")
-
-
-    # decision boundary for MED PCA 2D
+    # MED classifier 2D
     X_PC_2D, Y = prep_mnist(mnist_trainset, 2)
     X_test_PC_2D, Y_test = prep_mnist(mnist_testset, 2)
     med_clf_2D = MED_Classifier(X_PC_2D, Y)
-    print("Plotting decision boundary for 2D MED Classifier")
+    # print("Plotting decision boundary for 2D MED Classifier")
     med_clf_2D.plot_decision_boundary_analytical()
     med_clf_2D.plot_decision_boundary()
     med_clf_2D.print_decision_boundary_analytical()
 
-    preds_results = []
-    for i in range(len(X_test_PC_2D)):
-        pred = med_clf_2D.classify(X_test_PC_2D[i])
-        preds_results.append((pred, Y_test[i]))
+    Y_hat = med_clf_2D.predict(X_test_PC_2D)
+    accuracy = compute_accuracy(Y_hat, Y_test)
+    cf = confusion_matrix(Y_test, Y_hat)
+    error = compute_error(Y_hat, Y_test)
+    print(f"Accuracy for 2D MED Classifier: {round(accuracy * 100, 3)}%")
+    print(f"Error for 2D MED Classifier: {round(error, 6)}")
+    print(f"Confusion matrix for 2D MED Classifier: \n{cf}")
 
-    correct = 0
-    for pred in preds_results:
-        if pred[0] == pred[1]:
-            correct += 1
+    # GED classifier 20D
+    ged_clf = GED_Classifier(X_PC, Y)
 
-    print(f"Accuracy for 2D MED Classifier: {round(correct / len(preds_results) * 100, 3)}%")
+    Y_hat = ged_clf.predict(X_test_PC)
+    accuracy = compute_accuracy(Y_hat, Y_test)
+    cf = confusion_matrix(Y_test, Y_hat)
+    error = compute_error(Y_hat, Y_test)
+    print(f"Accuracy for 20D GED Classifier: {round(accuracy * 100, 3)}%")
+    print(f"Error for 20D GED Classifier: {round(error, 6)}")
+    print(f"Confusion matrix for 20D GED Classifier: \n{cf}")
 
-    # # GED classifier
-    # ged_clf = GED_Classifier(X_PC, Y)
+    # GED classifier 2D
+    ged_clf_2D = GED_Classifier(X_PC_2D, Y)
+    # print("Plotting decision boundary for 2D GED Classifier")
+    ged_clf_2D.plot_decision_boundary_analytical()
 
-
-
+    Y_hat = ged_clf_2D.predict(X_test_PC_2D)
+    accuracy = compute_accuracy(Y_hat, Y_test)
+    cf = confusion_matrix(Y_test, Y_hat)
+    error = compute_error(Y_hat, Y_test)
+    print(f"Accuracy for 2D GED Classifier: {round(accuracy * 100, 3)}%")
+    print(f"Error for 2D GED Classifier: {round(error, 6)}")
+    print(f"Confusion matrix for 2D GED Classifier: \n{cf}")
 
 if __name__ == "__main__":
     main()
