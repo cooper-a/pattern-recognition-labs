@@ -118,10 +118,26 @@ class GED_Classifier:
         # compute the mean of each class
         self.mean0 = np.mean(X0, axis=0)
         self.mean1 = np.mean(X1, axis=0)
-        self.covariance0 = np.cov(X0, rowvar=False)
-        self.covariance1 = np.cov(X1, rowvar=False)
-        self.covariance0_inverse = np.linalg.inv(self.covariance0)
-        self.covariance1_inverse = np.linalg.inv(self.covariance1)
+        covariance0 = np.cov(X0, rowvar=False)
+        covariance1 = np.cov(X1, rowvar=False)
+
+        # compute the inverse covariance with eigenvalue and eigenvector decomposition
+        eigvals0, eigvecs0 = np.linalg.eig(covariance0)
+        weight_matrix0 = np.diag(eigvals0 ** (-1/2)) @ eigvecs0.T
+        self.covariance0_inverse = weight_matrix0.T @ weight_matrix0
+
+        eigvals1, eigvecs1 = np.linalg.eig(covariance1)
+        weight_matrix1 = np.diag(eigvals1 ** (-1/2)) @ eigvecs1.T
+        self.covariance1_inverse = weight_matrix1.T @ weight_matrix1
+
+        # covariance0_inverse = np.linalg.inv(covariance0)
+        # covariance1_inverse = np.linalg.inv(covariance1)
+        # self.covariance0_inverse = covariance0_inverse
+        # self.covariance1_inverse = covariance1_inverse
+        # # sanity check if the inverse covariance is the same
+        # assert np.allclose(self.covariance0_inverse, covariance0_inverse)
+        # assert np.allclose(self.covariance1_inverse, covariance1_inverse)
+
         self.X_clf = X
         self.Y_clf = Y
 
@@ -180,33 +196,33 @@ def main():
     X_test_PC, Y_test = prep_mnist(mnist_testset, 20)
 
     # MED classifier 20D
-    med_clf = MED_Classifier(X_PC, Y)
-
-    med_clf.print_decision_boundary_analytical()
-    Y_hat = med_clf.predict(X_test_PC)
-    accuracy = compute_accuracy(Y_hat, Y_test)
-    cf = confusion_matrix(Y_hat, Y_test)
-    error = compute_error(Y_hat, Y_test)
-    print(f"Accuracy for 20D MED Classifier: {round(accuracy * 100, 3)}%")
-    print(f"Error for 20D MED Classifier: {round(error, 6)}")
-    print(f"Confusion matrix for 20D MED Classifier: \n{cf}")
-
+    # med_clf = MED_Classifier(X_PC, Y)
+    #
+    # med_clf.print_decision_boundary_analytical()
+    # Y_hat = med_clf.predict(X_test_PC)
+    # accuracy = compute_accuracy(Y_hat, Y_test)
+    # cf = confusion_matrix(Y_hat, Y_test)
+    # error = compute_error(Y_hat, Y_test)
+    # print(f"Accuracy for 20D MED Classifier: {round(accuracy * 100, 3)}%")
+    # print(f"Error for 20D MED Classifier: {round(error, 6)}")
+    # print(f"Confusion matrix for 20D MED Classifier: \n{cf}")
+    #
     # MED classifier 2D
     X_PC_2D, Y = prep_mnist(mnist_trainset, 2)
     X_test_PC_2D, Y_test = prep_mnist(mnist_testset, 2)
-    med_clf_2D = MED_Classifier(X_PC_2D, Y)
-    # print("Plotting decision boundary for 2D MED Classifier")
-    med_clf_2D.plot_decision_boundary_analytical()
-    med_clf_2D.plot_decision_boundary()
-    med_clf_2D.print_decision_boundary_analytical()
-
-    Y_hat = med_clf_2D.predict(X_test_PC_2D)
-    accuracy = compute_accuracy(Y_hat, Y_test)
-    cf = confusion_matrix(Y_test, Y_hat)
-    error = compute_error(Y_hat, Y_test)
-    print(f"Accuracy for 2D MED Classifier: {round(accuracy * 100, 3)}%")
-    print(f"Error for 2D MED Classifier: {round(error, 6)}")
-    print(f"Confusion matrix for 2D MED Classifier: \n{cf}")
+    # med_clf_2D = MED_Classifier(X_PC_2D, Y)
+    # # print("Plotting decision boundary for 2D MED Classifier")
+    # med_clf_2D.plot_decision_boundary_analytical()
+    # med_clf_2D.plot_decision_boundary()
+    # med_clf_2D.print_decision_boundary_analytical()
+    #
+    # Y_hat = med_clf_2D.predict(X_test_PC_2D)
+    # accuracy = compute_accuracy(Y_hat, Y_test)
+    # cf = confusion_matrix(Y_test, Y_hat)
+    # error = compute_error(Y_hat, Y_test)
+    # print(f"Accuracy for 2D MED Classifier: {round(accuracy * 100, 3)}%")
+    # print(f"Error for 2D MED Classifier: {round(error, 6)}")
+    # print(f"Confusion matrix for 2D MED Classifier: \n{cf}")
 
     # GED classifier 20D
     ged_clf = GED_Classifier(X_PC, Y)
