@@ -90,6 +90,7 @@ def main():
     X_test_PC, Y_test = prep_mnist(mnist_testset, 2)
 
     knn = KNNClassifier(X_PC, Y)
+    errors = {}
     for k_val in K_VALUES:
         knn.plot_decision_boundary(k_val)
         Y_hat = knn.predict(X_test_PC, k_val)
@@ -99,7 +100,17 @@ def main():
         print(f"KNN with k={k_val} is {round(accuracy * 100, 3)}% accurate")
         print(f"KNN with k={k_val} has an error of {round(error, 6)}")
         print(f"Confusion matrix for KNN with k={k_val}: \n{cf}")
+        errors[k_val] = error
+
+    # plot a bar graph of the errors
+    plt.bar(errors.keys(), errors.values())
+    plt.xlabel("k")
+    plt.ylabel("Error")
+    plt.title("Error vs. k for KNN classifier")
+    path = IMG_PATH + f"knn_error.png"
+    plt.savefig(path)
+    plt.show()
+
 
 if __name__ == "__main__":
     main()
-
