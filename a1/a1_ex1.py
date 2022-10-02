@@ -70,8 +70,8 @@ class KNNClassifier:
         plt.title(f"{k}-NN decision boundary")
 
         # legend
-        red_patch = mpatches.Patch(color='red', label='Class 1')
-        blue_patch = mpatches.Patch(color='blue', label='Class 0')
+        red_patch = mpatches.Patch(color='red', label='Class 0')
+        blue_patch = mpatches.Patch(color='blue', label='Class 1')
         plt.legend(handles=[red_patch, blue_patch])
         Path(IMG_PATH).mkdir(parents=True, exist_ok=True)
         path = IMG_PATH + f"{k}-NN_decision_boundary.png"
@@ -97,16 +97,16 @@ def main():
         accuracy = compute_accuracy(Y_test, Y_hat)
         error = compute_error(Y_test, Y_hat)
         cf = confusion_matrix(Y_test, Y_hat)
-        print(f"KNN with k={k_val} is {round(accuracy * 100, 3)}% accurate")
-        print(f"KNN with k={k_val} has an error of {round(error, 6)}")
-        print(f"Confusion matrix for KNN with k={k_val}: \n{cf}")
+        print(f"kNN with k={k_val} is {round(accuracy * 100, 3)}% accurate")
+        print(f"kNN with k={k_val} has an error of {round(error, 6)}")
+        print(f"Confusion matrix for kNN with k={k_val}: \n{cf}")
         errors[k_val] = error
 
     # plot a bar graph of the errors
     plt.bar(errors.keys(), errors.values())
     plt.xlabel("k")
     plt.ylabel("Error")
-    plt.title("Error vs. k for KNN classifier")
+    plt.title("Error vs. k for kNN classifier")
     path = IMG_PATH + f"knn_error.png"
     plt.savefig(path)
     plt.show()

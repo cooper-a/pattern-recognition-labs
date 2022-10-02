@@ -58,8 +58,8 @@ class MED_Classifier:
         plt.ylabel('PC2')
         plt.xlim(xx.min(), xx.max())
         plt.ylim(yy.min(), yy.max())
-        red_patch = mpatches.Patch(color='red', label='Class 1')
-        blue_patch = mpatches.Patch(color='blue', label='Class 0')
+        red_patch = mpatches.Patch(color='red', label='Class 0')
+        blue_patch = mpatches.Patch(color='blue', label='Class 1')
         plt.legend(handles=[red_patch, blue_patch])
         plt.title('MED Decision Boundary (2D)')
         Path(IMG_PATH).mkdir(parents=True, exist_ok=True)
@@ -83,8 +83,8 @@ class MED_Classifier:
         plt.ylabel('PC2')
         plt.xlim(self.X_clf[:, 0].min(), self.X_clf[:, 0].max())
         plt.ylim(self.X_clf[:, 1].min(), self.X_clf[:, 1].max())
-        red_patch = mpatches.Patch(color='red', label='Class 1')
-        blue_patch = mpatches.Patch(color='blue', label='Class 0')
+        red_patch = mpatches.Patch(color='red', label='Class 0')
+        blue_patch = mpatches.Patch(color='blue', label='Class 1')
         plt.legend(handles=[red_patch, blue_patch, boundary[0]])
         plt.title('MED Decision Boundary Analytical (2D)')
         Path(IMG_PATH).mkdir(parents=True, exist_ok=True)
@@ -97,7 +97,7 @@ class MED_Classifier:
         self.__check_if_clf_trained()
         prototype0 = self.prototype0.reshape(self.prototype0.shape[0], 1)
         prototype1 = self.prototype1.reshape(self.prototype0.shape[0], 1)
-        weights = (prototype0 - prototype1).T
+        weights = (prototype1 - prototype0).T
         bias = 0.5 * (np.matmul(prototype1.T, prototype1) - np.matmul(prototype0.T, prototype0))
         return weights, bias
 
@@ -180,8 +180,8 @@ class GED_Classifier:
         plt.ylabel('PC2')
         plt.xlim(xx.min(), xx.max())
         plt.ylim(yy.min(), yy.max())
-        red_patch = mpatches.Patch(color='red', label='Class 1')
-        blue_patch = mpatches.Patch(color='blue', label='Class 0')
+        red_patch = mpatches.Patch(color='red', label='Class 0')
+        blue_patch = mpatches.Patch(color='blue', label='Class 1')
         plt.legend(handles=[red_patch, blue_patch, boundary[0]], labels=['Class 1', 'Class 0', 'Decision boundary'])
         plt.title('GED Decision Boundary Analytical (2D)')
         Path(IMG_PATH).mkdir(parents=True, exist_ok=True)
@@ -218,14 +218,14 @@ def main():
 
     # MED classifier 20D
     med_clf = MED_Classifier(X_PC, Y)
-
+    w, b = med_clf.determine_decision_boundary_analytical()
     med_clf.print_decision_boundary_analytical()
     Y_hat = med_clf.predict(X_test_PC)
     accuracy = compute_accuracy(Y_hat, Y_test)
     cf = confusion_matrix(Y_hat, Y_test)
-    error = compute_error(Y_hat, Y_test)
+    med_error = compute_error(Y_hat, Y_test)
     print(f"Accuracy for 20D MED Classifier: {round(accuracy * 100, 3)}%")
-    print(f"Error for 20D MED Classifier: {round(error, 6)}")
+    print(f"Error for 20D MED Classifier: {round(med_error, 6)}")
     print(f"Confusion matrix for 20D MED Classifier: \n{cf}")
 
     # MED classifier 2D
@@ -248,14 +248,23 @@ def main():
     # GED classifier 20D
     ged_clf = GED_Classifier(X_PC, Y)
 
-    Q1, Q2, Q3 = ged_clf.determine_decision_boundary_analytical()
+    Q0, Q1, Q2 = ged_clf.determine_decision_boundary_analytical()
+
     Y_hat = ged_clf.predict(X_test_PC)
     accuracy = compute_accuracy(Y_hat, Y_test)
     cf = confusion_matrix(Y_test, Y_hat)
-    error = compute_error(Y_hat, Y_test)
+    ged_error = compute_error(Y_hat, Y_test)
     print(f"Accuracy for 20D GED Classifier: {round(accuracy * 100, 3)}%")
-    print(f"Error for 20D GED Classifier: {round(error, 6)}")
+    print(f"Error for 20D GED Classifier: {round(ged_error, 6)}")
     print(f"Confusion matrix for 20D GED Classifier: \n{cf}")
+    plt.bar(["MED", "GED"], [med_error, ged_error])
+    plt.title("MED vs GED Classifier Error")
+    plt.xlabel("Classifier")
+    plt.ylabel("Error")
+    path = IMG_PATH + f"MED_vs_GED_Error.png"
+    plt.savefig(path)
+    plt.show()
+    plt.clf()
 
     # GED classifier 2D
     ged_clf_2D = GED_Classifier(X_PC_2D, Y)
