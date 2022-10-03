@@ -70,8 +70,8 @@ class KNNClassifier:
         plt.title(f"{k}-NN decision boundary")
 
         # legend
-        red_patch = mpatches.Patch(color='red', label='Class 0')
-        blue_patch = mpatches.Patch(color='blue', label='Class 1')
+        red_patch = mpatches.Patch(color='red', label='Class 1')
+        blue_patch = mpatches.Patch(color='blue', label='Class 0')
         plt.legend(handles=[red_patch, blue_patch])
         Path(IMG_PATH).mkdir(parents=True, exist_ok=True)
         path = IMG_PATH + f"{k}-NN_decision_boundary.png"
