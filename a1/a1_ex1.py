@@ -5,7 +5,8 @@ import matplotlib.patches as mpatches
 from a1_utils import prep_mnist, IMG_PATH, confusion_matrix, compute_accuracy, compute_error
 from pathlib import Path
 
-class KNNClassifier:
+
+class kNNClassifier:
     def __init__(self, X, Y):
         self.X_clf = np.array(X)
         self.Y_clf = np.array(Y)
@@ -89,7 +90,7 @@ def main():
     X_PC, Y = prep_mnist(mnist_trainset, 2)
     X_test_PC, Y_test = prep_mnist(mnist_testset, 2)
 
-    knn = KNNClassifier(X_PC, Y)
+    knn = kNNClassifier(X_PC, Y)
     errors = {}
     for k_val in K_VALUES:
         knn.plot_decision_boundary(k_val)

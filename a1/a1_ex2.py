@@ -5,6 +5,7 @@ import matplotlib.patches as mpatches
 from a1_utils import prep_mnist, IMG_PATH, confusion_matrix, compute_accuracy, compute_error
 from pathlib import Path
 
+
 class MED_Classifier:
     def __init__(self, X, Y):
         self.X_clf = X
@@ -76,6 +77,7 @@ class MED_Classifier:
         w2 = weights[0][1]
         bias = bias[0]
         x = np.linspace(self.X_clf[:, 0].min(), self.X_clf[:, 0].max(), 100)
+
         y = (-1 * bias / w2) - (w1 / w2) * x
         boundary = plt.plot(x, y, 'k', label='Decision boundary')
         plt.scatter(self.X_clf[:, 0], self.X_clf[:, 1], c=self.Y_clf, cmap=plt.cm.bwr)
@@ -97,18 +99,9 @@ class MED_Classifier:
         self.__check_if_clf_trained()
         prototype0 = self.prototype0.reshape(self.prototype0.shape[0], 1)
         prototype1 = self.prototype1.reshape(self.prototype0.shape[0], 1)
-        weights = (prototype1 - prototype0).T
+        weights = (prototype0 - prototype1).T
         bias = 0.5 * (np.matmul(prototype1.T, prototype1) - np.matmul(prototype0.T, prototype0))
         return weights, bias
-
-    def print_decision_boundary_analytical(self):
-        self.__check_if_clf_trained()
-        weights, bias = self.determine_decision_boundary_analytical()
-        equation_string = "Decision boundary equation: "
-        for i in range(len(weights[0])):
-            equation_string += f"{round(weights[0][i], 3)}x{i + 1} + "
-        equation_string += f"{round(bias[0][0], 3)} = 0"
-        print(equation_string)
 
 
 class GED_Classifier:
@@ -219,7 +212,8 @@ def main():
     # MED classifier 20D
     med_clf = MED_Classifier(X_PC, Y)
     w, b = med_clf.determine_decision_boundary_analytical()
-    med_clf.print_decision_boundary_analytical()
+    # commented out for now, because matrix is too big to print
+    # Form equation: w0x0 + w1x1 + ... + w19x19 + b = 0
     Y_hat = med_clf.predict(X_test_PC)
     accuracy = compute_accuracy(Y_hat, Y_test)
     cf = confusion_matrix(Y_hat, Y_test)
@@ -235,7 +229,6 @@ def main():
     # print("Plotting decision boundary for 2D MED Classifier")
     med_clf_2D.plot_decision_boundary_analytical()
     med_clf_2D.plot_decision_boundary()
-    med_clf_2D.print_decision_boundary_analytical()
 
     Y_hat = med_clf_2D.predict(X_test_PC_2D)
     accuracy = compute_accuracy(Y_hat, Y_test)
@@ -249,6 +242,11 @@ def main():
     ged_clf = GED_Classifier(X_PC, Y)
 
     Q0, Q1, Q2 = ged_clf.determine_decision_boundary_analytical()
+    # Large matrices so we commented out the print statement for now
+    # Format of the equation found in the accompanying report
+    # print(f"Q0 = {Q0}")
+    # print(f"Q1 = {Q1}")
+    # print(f"Q2 = {Q2}")
 
     Y_hat = ged_clf.predict(X_test_PC)
     accuracy = compute_accuracy(Y_hat, Y_test)
@@ -270,6 +268,11 @@ def main():
     ged_clf_2D = GED_Classifier(X_PC_2D, Y)
     # print("Plotting decision boundary for 2D GED Classifier")
     ged_clf_2D.plot_decision_boundary_analytical()
+    Q0, Q1, Q2 = ged_clf_2D.determine_decision_boundary_analytical()
+    # Format of the equation found in the accompanying report
+    # print(f"Q0 = {Q0}")
+    # print(f"Q1 = {Q1}")
+    # print(f"Q2 = {Q2}")
     ged_clf_2D.print_decision_boundary_analytical()
     Y_hat = ged_clf_2D.predict(X_test_PC_2D)
     accuracy = compute_accuracy(Y_hat, Y_test)
