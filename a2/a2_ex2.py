@@ -1,17 +1,31 @@
 import torchvision.datasets as datasets
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-from a2_utils import prep_mnist, IMG_PATH, confusion_matrix, compute_accuracy, compute_error
-from pathlib import Path
+from a2_utils import prep_mnist, confusion_matrix, compute_accuracy, compute_error
 
 
-class MLE_Classifier:
-    # Implement the MLE classifier with exponential
+class MLE_Exponential_Classifier:
+    # Implement the MLE classifier assuming a 1 dimensional exponential distribution
     def __init__(self, X, Y):
+        self.X_clf = X
+        self.Y_clf = Y
+        X0 = [X[i] for i in range(len(X)) if Y[i] == 0]
+        X1 = [X[i] for i in range(len(X)) if Y[i] == 1]
+
+        # filter out negative values
+        X0 = [x for x in X0 if x[0] > 0]
+        X1 = [x for x in X1 if x[0] > 0]
+
+        self.mean0 = np.mean(X0, axis=0)
+        self.mean1 = np.mean(X1, axis=0)
+        self.lambda0 = 1 / self.mean0
+        self.lambda1 = 1 / self.mean1
 
     def classify(self, x):
-
+        self.__check_if_clf_trained()
+        if self.lambda0 * np.exp(-self.lambda0 * x) > self.lambda1 * np.exp(-self.lambda1 * x):
+            return 0
+        else:
+            return 1
 
     def predict(self, X):
         return [self.classify(x) for x in X]
@@ -20,29 +34,72 @@ class MLE_Classifier:
         if self.mean0 is None or self.mean1 is None:
             raise Exception("Classifier is not trained yet.")
 
-    def plot_decision_boundary(self, h=10):
+
+class MLE_Uniform_Classifier:
+    # Implement the MLE classifier assuming a 1 dimensional uniform distribution
+    def __init__(self, X, Y):
+        self.X_clf = X
+        self.Y_clf = Y
+        X0 = [X[i] for i in range(len(X)) if Y[i] == 0]
+        X1 = [X[i] for i in range(len(X)) if Y[i] == 1]
+
+        self.mean0 = np.mean(X0, axis=0)
+        self.mean1 = np.mean(X1, axis=0)
+
+        self.a0 = min(X0)[0]
+        self.a1 = min(X1)[0]
+        self.b0 = max(X0)[0]
+        self.b1 = max(X1)[0]
+
+    def classify(self, x):
         self.__check_if_clf_trained()
-        x_min, x_max = self.X_clf[:, 0].min() - 1, self.X_clf[:, 0].max() + 1
-        y_min, y_max = self.X_clf[:, 1].min() - 1, self.X_clf[:, 1].max() + 1
-        xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
-        Z = np.zeros(xx.shape)
-        for i in range(xx.shape[0]):
-            for j in range(xx.shape[1]):
-                Z[i, j] = self.classify(np.array([xx[i, j], yy[i, j]]))
-        plt.contourf(xx, yy, Z, cmap=plt.cm.coolwarm, alpha=0.8)
-        plt.scatter(self.X_clf[:, 0], self.X_clf[:, 1], c=self.Y_clf, cmap=plt.cm.coolwarm)
-        plt.xlabel('PC1')
-        plt.ylabel('PC2')
-        plt.xlim(xx.min(), xx.max())
-        plt.ylim(yy.min(), yy.max())
-        red_patch = mpatches.Patch(color='red', label='Class 0')
-        blue_patch = mpatches.Patch(color='blue', label='Class 1')
-        plt.legend(handles=[red_patch, blue_patch])
-        plt.title('MLE Decision Boundary (2D)')
-        Path(IMG_PATH).mkdir(parents=True, exist_ok=True)
-        path = IMG_PATH + f"MLE_Decision_Boundary_2D.png"
-        plt.savefig(path)
-        plt.show()
+        if self.a0 < x < self.b0:
+            prob0 = 1 / (self.b0 - self.a0)
+        else:
+            prob0 = 0
+        if self.a1 < x < self.b1:
+            prob1 = 1 / (self.b1 - self.a1)
+        else:
+            prob1 = 0
+        if prob0 > prob1:
+            return 0
+        else:
+            return 1
+
+    def predict(self, X):
+        return [self.classify(x) for x in X]
+
+    def __check_if_clf_trained(self):
+        if self.mean0 is None or self.mean1 is None:
+            raise Exception("Classifier is not trained yet.")
+
+
+class MLE_Gaussian_Classifier:
+    # Implement the MLE classifier assuming a 1 dimensional gaussian distribution
+    def __init__(self, X, Y):
+        X0 = [X[i] for i in range(len(X)) if Y[i] == 0]
+        X1 = [X[i] for i in range(len(X)) if Y[i] == 1]
+        self.X_clf = X
+        self.Y_clf = Y
+        self.mean0 = np.mean(X0, axis=0)
+        self.mean1 = np.mean(X1, axis=0)
+        self.var0 = np.var(X0, axis=0)
+        self.var1 = np.var(X1, axis=0)
+
+    def classify(self, x):
+        log_p0 = -np.log(np.sqrt(2 * np.pi * self.var0)) - (x - self.mean0) ** 2 / (2 * self.var0)
+        log_p1 = -np.log(np.sqrt(2 * np.pi * self.var1)) - (x - self.mean1) ** 2 / (2 * self.var1)
+        if log_p0 > log_p1:
+            return 0
+        else:
+            return 1
+
+    def predict(self, X):
+        return [self.classify(x) for x in X]
+
+    def __check_if_clf_trained(self):
+        if self.mean0 is None or self.mean1 is None:
+            raise Exception("Classifier is not trained yet.")
 
 
 
@@ -50,29 +107,41 @@ def main():
     mnist_trainset = datasets.MNIST(root='./data', train=True, download=True, transform=None)
     mnist_testset = datasets.MNIST(root='./data', train=False, download=True, transform=None)
 
-    X_PC, Y, pca = prep_mnist(mnist_trainset, 2)
-    X_test_PC, Y_test, _ = prep_mnist(mnist_testset, 2, pca)
+    X_PC, Y, pca = prep_mnist(mnist_trainset, 1)
+    X_test_PC, Y_test, _ = prep_mnist(mnist_testset, 1, pca)
 
-    # Train the classifier
-    mle_clf = MLE_Classifier(X_PC, Y)
-    # Predict the test set
-    Y_hat = mle_clf.predict(X_test_PC)
-    accuracy = compute_accuracy(Y_hat, Y_test)
-    print(f"Accuracy: {accuracy}")
-    error = compute_error(Y_hat, Y_test)
-    print(f"Error: {error}")
+    mle_exp_clf = MLE_Exponential_Classifier(X_PC, Y)
+    mle_uni_clf = MLE_Uniform_Classifier(X_PC, Y)
+    mle_gauss_clf = MLE_Gaussian_Classifier(X_PC, Y)
 
-    # plot the decision boundary
-    mle_clf.plot_decision_boundary()
+    Y_pred_exp = mle_exp_clf.predict(X_test_PC)
+    Y_pred_uni = mle_uni_clf.predict(X_test_PC)
+    Y_pred_gauss = mle_gauss_clf.predict(X_test_PC)
 
-    # Train the classifier
-    map_clf = MAP_Classifier(X_PC, Y)
-    # Predict the test set
-    Y_hat = map_clf.predict(X_test_PC)
-    accuracy = compute_accuracy(Y_hat, Y_test)
-    print(f"Accuracy: {accuracy}")
-    error = compute_error(Y_hat, Y_test)
-    print(f"Error: {error}")
+    conf_mat_exp = confusion_matrix(Y_test, Y_pred_exp)
+    conf_mat_uni = confusion_matrix(Y_test, Y_pred_uni)
+    conf_mat_gauss = confusion_matrix(Y_test, Y_pred_gauss)
+
+    print("Confusion Matrix for MLE Exponential Classifier")
+    print(conf_mat_exp)
+    print("Confusion Matrix for MLE Uniform Classifier")
+    print(conf_mat_uni)
+    print("Confusion Matrix for MLE Gaussian Classifier")
+    print(conf_mat_gauss)
+
+    print("Accuracy for MLE Exponential Classifier")
+    print(compute_accuracy(Y_test, Y_pred_exp))
+    print("Accuracy for MLE Uniform Classifier")
+    print(compute_accuracy(Y_test, Y_pred_uni))
+    print("Accuracy for MLE Gaussian Classifier")
+    print(compute_accuracy(Y_test, Y_pred_gauss))
+
+    print("Error for MLE Exponential Classifier")
+    print(compute_error(Y_test, Y_pred_exp))
+    print("Error for MLE Uniform Classifier")
+    print(compute_error(Y_test, Y_pred_uni))
+    print("Error for MLE Gaussian Classifier")
+    print(compute_error(Y_test, Y_pred_gauss))
 
 
 if __name__ == "__main__":
