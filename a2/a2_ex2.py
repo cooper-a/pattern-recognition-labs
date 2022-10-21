@@ -76,7 +76,7 @@ class MLE_Uniform_Classifier:
 
 
 class MLE_Gaussian_Classifier:
-    # Implement the MLE classifier assuming a 1 dimensional gaussian distribution
+    # Implement the MLE classifier assuming a 1 dimensional Gaussian distribution
     def __init__(self, X, Y):
         X0 = [X[i] for i in range(len(X)) if Y[i] == 0]
         X1 = [X[i] for i in range(len(X)) if Y[i] == 1]
@@ -103,7 +103,6 @@ class MLE_Gaussian_Classifier:
             raise Exception("Classifier is not trained yet.")
 
 
-
 def main():
     mnist_trainset = datasets.MNIST(root='./data', train=True, download=True, transform=None)
     mnist_testset = datasets.MNIST(root='./data', train=False, download=True, transform=None)
@@ -119,9 +118,9 @@ def main():
     Y_pred_uni = mle_uni_clf.predict(X_test_PC)
     Y_pred_gauss = mle_gauss_clf.predict(X_test_PC)
 
-    conf_mat_exp = confusion_matrix(Y_test, Y_pred_exp)
-    conf_mat_uni = confusion_matrix(Y_test, Y_pred_uni)
-    conf_mat_gauss = confusion_matrix(Y_test, Y_pred_gauss)
+    # conf_mat_exp = confusion_matrix(Y_test, Y_pred_exp)
+    # conf_mat_uni = confusion_matrix(Y_test, Y_pred_uni)
+    # conf_mat_gauss = confusion_matrix(Y_test, Y_pred_gauss)
 
     # print("Confusion Matrix for MLE Exponential Classifier")
     # print(conf_mat_exp)
