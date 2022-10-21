@@ -7,4 +7,4 @@ You will need to close the plots manually when running the script.
 
 Run code related to exercise 2 with  `python a2_ex2.py`
 
-Please read comments in the code.
+Please read comments in the code. Code is not explained in the report and is self documenting.
