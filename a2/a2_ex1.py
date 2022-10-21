@@ -64,7 +64,7 @@ class MLE_Classifier:
 
 
 class MAP_Classifier:
-    def __init__(self, X, Y, alpha=1):
+    def __init__(self, X, Y):
         X0 = [X[i] for i in range(len(X)) if Y[i] == 0]
         X1 = [X[i] for i in range(len(X)) if Y[i] == 1]
         # compute the mean of each class
@@ -74,7 +74,6 @@ class MAP_Classifier:
         self.mean1 = np.mean(X1, axis=0)
         self.covariance0 = np.cov(X0, rowvar=False)
         self.covariance1 = np.cov(X1, rowvar=False)
-        self.alpha = alpha
         self.log_prior0 = np.log(len(X0) / len(X))
         self.log_prior1 = np.log(len(X1) / len(X))
 
@@ -114,21 +113,34 @@ def main():
     # Predict the test set
     Y_hat = mle_clf.predict(X_test_PC)
     accuracy = compute_accuracy(Y_hat, Y_test)
-    print(f"Accuracy: {accuracy}")
     error = compute_error(Y_hat, Y_test)
-    print(f"Error: {error}")
+    print("MLE Classifier Error: ", round(error, 7))
+    print("MLE Classifier Accuracy: ", round(accuracy, 7))
+    print("MLE Classifier mean0 vector: ", mle_clf.mean0)
+    print("MLE Classifier mean1 vector: ", mle_clf.mean1)
+    print("MLE Classifier covariance0 matrix: ", mle_clf.covariance0)
+    print("MLE Classifier covariance1 matrix: ", mle_clf.covariance1)
 
     # plot the decision boundary
     mle_clf.plot_decision_boundary()
+
+    # print a seperator line
+    print("--------------------------------------------------------------------------")
 
     # Train the classifier
     map_clf = MAP_Classifier(X_PC, Y)
     # Predict the test set
     Y_hat = map_clf.predict(X_test_PC)
     accuracy = compute_accuracy(Y_hat, Y_test)
-    print(f"Accuracy: {accuracy}")
     error = compute_error(Y_hat, Y_test)
-    print(f"Error: {error}")
+    print("MAP Classifier Error: ", round(error, 7))
+    print("MAP Classifier Accuracy: ", round(accuracy, 7))
+    print("MAP Classifier mean0 vector: ", map_clf.mean0)
+    print("MAP Classifier mean1 vector: ", map_clf.mean1)
+    print("MAP Classifier covariance0 matrix: ", map_clf.covariance0)
+    print("MAP Classifier covariance1 matrix: ", map_clf.covariance1)
+    print("MAP Classifier prior0: ", round(np.exp(map_clf.log_prior0), 7))
+    print("MAP Classifier prior1: ", round(np.exp(map_clf.log_prior1), 7))
 
 
 if __name__ == "__main__":

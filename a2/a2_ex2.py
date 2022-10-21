@@ -1,7 +1,8 @@
 import torchvision.datasets as datasets
 import numpy as np
-from a2_utils import prep_mnist, confusion_matrix, compute_accuracy, compute_error
-
+from a2_utils import prep_mnist, confusion_matrix, compute_accuracy, compute_error, IMG_PATH
+import matplotlib.pyplot as plt
+from pathlib import Path
 
 class MLE_Exponential_Classifier:
     # Implement the MLE classifier assuming a 1 dimensional exponential distribution
@@ -122,26 +123,39 @@ def main():
     conf_mat_uni = confusion_matrix(Y_test, Y_pred_uni)
     conf_mat_gauss = confusion_matrix(Y_test, Y_pred_gauss)
 
-    print("Confusion Matrix for MLE Exponential Classifier")
-    print(conf_mat_exp)
-    print("Confusion Matrix for MLE Uniform Classifier")
-    print(conf_mat_uni)
-    print("Confusion Matrix for MLE Gaussian Classifier")
-    print(conf_mat_gauss)
+    # print("Confusion Matrix for MLE Exponential Classifier")
+    # print(conf_mat_exp)
+    # print("Confusion Matrix for MLE Uniform Classifier")
+    # print(conf_mat_uni)
+    # print("Confusion Matrix for MLE Gaussian Classifier")
+    # print(conf_mat_gauss)
+    #
+    # print("Accuracy for MLE Exponential Classifier")
+    # print(compute_accuracy(Y_test, Y_pred_exp))
+    # print("Accuracy for MLE Uniform Classifier")
+    # print(compute_accuracy(Y_test, Y_pred_uni))
+    # print("Accuracy for MLE Gaussian Classifier")
+    # print(compute_accuracy(Y_test, Y_pred_gauss))
 
-    print("Accuracy for MLE Exponential Classifier")
-    print(compute_accuracy(Y_test, Y_pred_exp))
-    print("Accuracy for MLE Uniform Classifier")
-    print(compute_accuracy(Y_test, Y_pred_uni))
-    print("Accuracy for MLE Gaussian Classifier")
-    print(compute_accuracy(Y_test, Y_pred_gauss))
+    print("Error for MLE Exponential Classifier is: ", round(compute_error(Y_test, Y_pred_exp), 7))
+    print("The lambda0 is: ", mle_exp_clf.lambda0)
+    print("The lambda1 is: ", mle_exp_clf.lambda1)
 
-    print("Error for MLE Exponential Classifier")
-    print(compute_error(Y_test, Y_pred_exp))
-    print("Error for MLE Uniform Classifier")
-    print(compute_error(Y_test, Y_pred_uni))
-    print("Error for MLE Gaussian Classifier")
-    print(compute_error(Y_test, Y_pred_gauss))
+    # print a line to separate the output of different classifiers
+    print("--------------------------------------------------")
+    print("Error for MLE Uniform Classifier is: ", round(compute_error(Y_test, Y_pred_uni), 7))
+    print("The a0 is: ", mle_uni_clf.a0)
+    print("The a1 is: ", mle_uni_clf.a1)
+    print("The b0 is: ", mle_uni_clf.b0)
+    print("The b1 is: ", mle_uni_clf.b1)
+
+    # print a line to separate the output of different classifiers
+    print("--------------------------------------------------")
+    print("Error for MLE Gaussian Classifier is: ", round(compute_error(Y_test, Y_pred_gauss), 7))
+    print("The mean0 is: ", mle_gauss_clf.mean0)
+    print("The mean1 is: ", mle_gauss_clf.mean1)
+    print("The var0 is: ", mle_gauss_clf.var0)
+    print("The var1 is: ", mle_gauss_clf.var1)
 
 
 if __name__ == "__main__":
