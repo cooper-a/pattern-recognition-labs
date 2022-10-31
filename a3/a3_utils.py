@@ -5,7 +5,7 @@ import pathlib
 IMG_PATH = str(pathlib.Path(__file__).parent.resolve() / 'images') + "/"
 
 
-def prep_mnist(mnist_set, n_components, pca=None):
+def prep_mnist(mnist_set, n_components=None, pca=None, apply_pca=True):
     filtered_mnist_set = []
     for image in mnist_set:
         if image[1] == 0 or image[1] == 1:
@@ -14,12 +14,15 @@ def prep_mnist(mnist_set, n_components, pca=None):
     X = [np.asarray(val[0]).flatten() for val in filtered_mnist_set]
     Y = [val[1] for val in filtered_mnist_set]
 
-    if not pca:
-        pca = PCA(n_components=n_components)
-        X_PC = pca.fit_transform(X)
+    if apply_pca:
+        if not pca:
+            pca = PCA(n_components=n_components)
+            X_PC = pca.fit_transform(X)
+        else:
+            X_PC = pca.transform(X)
+        return (X_PC, Y, pca)
     else:
-        X_PC = pca.transform(X)
-    return (X_PC, Y, pca)
+        return (np.asarray(X), np.asarray(Y), pca)
 
 
 def confusion_matrix(Y, Y_hat):
