@@ -37,19 +37,19 @@ class Histogram_Classifier():
         return 0 if self.prob0(x) > self.prob1(x) else 1
 
     def prob0(self, x):
-        if x[0] < self.min0 or x[0] > self.max0:
+        if x < self.min0 or x > self.max0:
             return 0
         else:
-            return self.proba0[int(np.floor((x[0] - self.min0) / self.bin_width))]
+            return self.proba0[int(np.floor((x - self.min0) / self.bin_width))]
 
     def prob1(self, x):
-        if x[0] < self.min1 or x[0] > self.max1:
+        if x < self.min1 or x > self.max1:
             return 0
         else:
-            return self.proba1[int(np.floor((x[0] - self.min1) / self.bin_width))]
+            return self.proba1[int(np.floor((x - self.min1) / self.bin_width))]
 
     def predict(self, X):
-        return [self.classify(x) for x in X]
+        return [self.classify(x[0]) for x in X]
 
     def __check_if_clf_trained(self):
         if self.hist0 is None or self.hist1 is None:
@@ -58,9 +58,14 @@ class Histogram_Classifier():
     def plot_histogram(self):
         # with probability as y-axis
         self.__check_if_clf_trained()
-        plt.figure()
-        plt.bar(np.arange(self.min0, self.max0, self.bin_width), self.proba0, width=self.bin_width, color='b')
-        plt.bar(np.arange(self.min1, self.max1, self.bin_width), self.proba1, width=self.bin_width, color='r')
+        total_min = min(min(self.X0), min(self.X1))[0] - 2 * self.bin_width
+        total_max = max(max(self.X0), max(self.X1))[0] + 2 * self.bin_width
+        x_plot = np.linspace(total_min, total_max, 5000)
+
+        preds_0 = [self.prob0(x) for x in x_plot]
+        preds_1 = [self.prob1(x) for x in x_plot]
+        plt.plot(x_plot, preds_0, '-r', label='P(x|y=0)')
+        plt.plot(x_plot, preds_1, '-b', label='P(x|y=1)')
         plt.xlabel("PC1")
         plt.ylabel("Probability")
         plt.title("Histogram of class 0 and class 1 in 1D Space bin_width={}".format(self.bin_width))
@@ -77,26 +82,25 @@ class KDE_Classifier():
         self.Y_clf = Y
         X0 = [X[i] for i in range(len(X)) if Y[i] == 0]
         X1 = [X[i] for i in range(len(X)) if Y[i] == 1]
-        self.X0 = X0
-        self.X1 = X1
+        self.X0 = np.array(X0)
+        self.X1 = np.array(X1)
         self.sigma = sigma
 
+    def gaussian_window(self, x):
+        # unscaled gaussian window
+        return np.exp(-0.5 * x ** 2) / np.sqrt(2 * np.pi)
+
+    def prob0(self, x):
+        self.__check_if_clf_trained()
+        vals = (self.X0 - x) / self.sigma
+        return np.mean(self.gaussian_window(vals) / self.sigma)
+    def prob1(self, x):
+        self.__check_if_clf_trained()
+        vals = (self.X1 - x) / self.sigma
+        return np.mean(self.gaussian_window(vals) / self.sigma)
+
     def classify(self, x):
-        # vectorized implementation
-        prob0 = self.parzen_class0(x)
-        prob1 = self.parzen_class1(x)
-        if prob0 > prob1:
-            return 0
-        else:
-            return 1
-
-    def parzen_class0(self, x):
-        prob0 = np.sum(np.exp(-np.sum((self.X0 - x) ** 2, axis=1) / (2 * self.sigma ** 2))) / (len(self.X0) * 1/np.sqrt(2*np.pi*self.sigma**2))
-        return prob0
-
-    def parzen_class1(self, x):
-        prob1 = np.sum(np.exp(-np.sum((self.X1 - x) ** 2, axis=1) / (2 * self.sigma ** 2))) / (len(self.X1) * 1/np.sqrt(2*np.pi*self.sigma**2))
-        return prob1
+        return 0 if self.prob0(x) > self.prob1(x) else 1
 
     def predict(self, X):
         return [self.classify(x) for x in X]
@@ -108,21 +112,24 @@ class KDE_Classifier():
     def plot_parzen_distribution(self):
         # plot the PDF of the two classes with probability as y-axis
         self.__check_if_clf_trained()
-        total_min = min(min(self.X0), min(self.X1))[0]
-        total_max = max(max(self.X0), max(self.X1))[0]
+        total_min = min(min(self.X0), min(self.X1))[0] - 2 * self.sigma
+        total_max = max(max(self.X0), max(self.X1))[0] + 2 * self.sigma
         x = np.arange(total_min, total_max, 0.1)
         y0 = np.zeros(len(x))
         y1 = np.zeros(len(x))
         for i in range(len(x)):
-            y0[i] = self.parzen_class0([x[i]])
-            y1[i] = self.parzen_class1([x[i]])
+            y0[i] = self.prob0(np.array([x[i]]))
+            y1[i] = self.prob1(np.array([x[i]]))
+
+        # sanity check to see if the sum of the two classes is 1
+        print("Sum of the two classes: {}".format(np.sum(y0) + np.sum(y1)))
         plt.figure()
-        plt.plot(x, y0, color='blue')
-        plt.plot(x, y1, color='orange')
+        plt.plot(x, y0, color='b')
+        plt.plot(x, y1, color='r')
         plt.xlabel("PC1")
         plt.ylabel("Probability")
         plt.title("Parzen Distribution of class 0 and class 1 in 1D Space sigma={}".format(self.sigma))
-        plt.legend(handles=[mpatches.Patch(color='blue', label='0'), mpatches.Patch(color='orange', label='1')])
+        plt.legend(handles=[mpatches.Patch(color='b', label='Class 0'), mpatches.Patch(color='r', label='Class 1')])
         Path(IMG_PATH).mkdir(parents=True, exist_ok=True)
         plt.savefig(IMG_PATH + "parzen_distribution.png")
         plt.show()
@@ -137,7 +144,7 @@ def main():
     X_PC, Y, pca = prep_mnist(mnist_trainset, n_components=1)
     X_test_PC, Y_test, _ = prep_mnist(mnist_testset, n_components=1, pca=pca)
 
-    clf = Histogram_Classifier(X_PC, Y)
+    clf = Histogram_Classifier(X_PC, Y, bin_width=1)
     clf.plot_histogram()
     Y_pred = clf.predict(X_test_PC)
     print("Histogram Classifier with bin width = 1")
@@ -178,9 +185,6 @@ def main():
     print("Error: ", compute_error(Y_test, Y_pred))
     print("Confusion matrix: ")
     print(confusion_matrix(Y_test, Y_pred))
-
-
-
 
 
 
