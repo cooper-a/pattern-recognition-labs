@@ -1,11 +1,5 @@
-import sklearn
 import torchvision.datasets as datasets
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-from a3_utils import prep_mnist, IMG_PATH, confusion_matrix, compute_accuracy, compute_error
-from pathlib import Path
-
 
 class K_Means_Clustering():
     # take in 784-1 mnist data and run k-means clustering
@@ -36,28 +30,11 @@ class K_Means_Clustering():
             if len(X_k) == 0:
                 continue
             new_centroid = np.mean(X_k, axis=0)
-            if np.linalg.norm(new_centroid - self.centroids[k]) > 1e-5:
+            if np.linalg.norm(new_centroid - self.centroids[k]) != 0:
                 converged = False
             self.centroids[k] = new_centroid
         return converged
 
-    def predict(self, X):
-        return np.array([self.classify(x) for x in X])
-
-    def classify(self, x):
-        return np.argmin([np.linalg.norm(x - self.centroids[k]) for k in range(self.K)])
-
-    def update_centroids(self):
-        converged = True
-        for k in range(self.K):
-            X_k = [self.X[i] for i in range(len(self.X)) if self.clusters[i] == k]
-            if len(X_k) == 0:
-                continue
-            new_centroid = np.mean(X_k, axis=0)
-            if np.linalg.norm(new_centroid - self.centroids[k]) > 1e-5:
-                converged = False
-            self.centroids[k] = new_centroid
-        return converged
 
     def compute_cluster_consistency(self, Y):
         # compute the consistency of the clusters with the labels
@@ -79,16 +56,12 @@ class K_Means_Clustering():
         return total_consistency / self.K
 
 
-
-
-
-
-
 def main():
     mnist_trainset = datasets.MNIST(root='./data', train=True, download=True, transform=None)
 
     # prepare the data (flatten the images)
-    # use only 100 samples per class
+    # use only the first 100 samples per class
+    print("Using only the first 100 samples per class. Total number of samples: {}".format(100 * 10))
     filtered_set = []
 
     for i in range(10):
@@ -106,14 +79,10 @@ def main():
     flattened_trainset = X
     labels_trainset = Y
 
+    # Use total dataset
     # flattened_trainset = [np.reshape(img, (784,)) for img, _ in mnist_trainset]
-    #
     # labels_trainset = [label for _, label in mnist_trainset]
 
-
-
-
-    # run k-means clustering (10 clusters for 10 digits)
     K_vals = [5, 10, 20, 40]
 
     for K in K_vals:
