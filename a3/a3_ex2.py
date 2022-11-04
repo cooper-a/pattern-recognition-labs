@@ -90,7 +90,7 @@ def main():
 
         # compute the cluster consistency
         cluster_consistency = k_means.compute_cluster_consistency(labels_trainset)
-        print("For K = {} Cluster Consistency: {}".format(K, cluster_consistency))
+        print("For K-means,  K = {} Cluster Consistency: {}".format(K, cluster_consistency))
 
         print("-" * 50)
 
