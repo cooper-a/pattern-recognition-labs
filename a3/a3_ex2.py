@@ -1,6 +1,6 @@
 import torchvision.datasets as datasets
 import numpy as np
-
+import matplotlib.pyplot as plt
 class K_Means_Clustering():
     # take in 784-1 mnist data and run k-means clustering
     def __init__(self, X, K=2):
@@ -57,6 +57,7 @@ class K_Means_Clustering():
 
 
 def main():
+
     mnist_trainset = datasets.MNIST(root='./data', train=True, download=True, transform=None)
 
     # prepare the data (flatten the images)

@@ -1,10 +1,17 @@
-import numpy as np
 import torch
 import torch.nn as nn
 import torch.utils.data as data
 import torchvision.datasets as datasets
+import torchvision.transforms
+import json
+from a4_utils import plot_results, train
+import pathlib
 
-NUM_EPOCH = 10
+ROOT_PATH = str(pathlib.Path(__file__).parent.resolve() / 'ex1_outputs') + "/"
+NUM_EPOCHS = 5
+LEARNING_RATE = 0.01
+BATCH_SIZE = 64
+
 
 class Net(nn.Module):
     """"
@@ -54,46 +61,37 @@ class Net(nn.Module):
         return x
 
 
-def train(model, train_loader, optimizer, criterion, device):
-
-    for epoch in range(NUM_EPOCH + 1):
-        running_loss = 0
-        for i, (x, y) in enumerate(train_loader):
-            x = x.to(device)
-            y = y.to(device)
-
-            optimizer.zero_grad()
-            output = model(x)
-            loss = criterion(output, y)
-            loss.backward()
-            optimizer.step()
-
-            running_loss += loss.item()
-
-            if i % 100 == 0:
-                print(f"Epoch: %d, Batch: %d, Loss: %f" % (epoch, i, running_loss / 100))
-                running_loss = 0.0
-
-
-
-
 def main():
-    mnist_trainset = datasets.MNIST(root='./data', train=True, download=True, transform=None)
-    mnist_testset = datasets.MNIST(root='./data', train=False, download=True, transform=None)
+    pathlib.Path(ROOT_PATH).mkdir(parents=True, exist_ok=True)
+    transforms = torchvision.transforms.Compose([
+        torchvision.transforms.Resize((32, 32)),
+        torchvision.transforms.ToTensor()
+    ])
 
-    # resize to 32x32
-    mnist_trainset.data = np.array([np.array(x.resize((32, 32))) for x in mnist_trainset.data])
-    mnist_testset.data = np.array([np.array(x.resize((32, 32))) for x in mnist_testset.data])
+    mnist_trainset = datasets.MNIST(root='./data', train=True, download=True, transform=transforms)
+    mnist_testset = datasets.MNIST(root='./data', train=False, download=True, transform=transforms)
 
     vgg11 = Net()
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     vgg11.to(device)
 
-    train_loader = torch.utils.data.DataLoader(mnist_trainset, batch_size=64, shuffle=True)
-    optimizer = torch.optim.SGD(vgg11.parameters(), lr=0.001, momentum=0.9)
+    train_loader = torch.utils.data.DataLoader(mnist_trainset, batch_size=BATCH_SIZE, shuffle=True)
+    test_loader = torch.utils.data.DataLoader(mnist_testset, batch_size=BATCH_SIZE, shuffle=True)
+
+    # optimizer = torch.optim.SGD(vgg11.parameters(), lr=LEARNING_RATE, momentum=0.9)
+    # try adam optimizer
+    optimizer = torch.optim.Adam(vgg11.parameters(), lr=LEARNING_RATE)
 
     criterion = nn.CrossEntropyLoss()
-    train(vgg11, train_loader, optimizer, criterion, device)
+    results = train(vgg11, train_loader, test_loader, optimizer, criterion, device, NUM_EPOCHS)
+
+    plot_results(results, 'a4_ex1.png', ROOT_PATH, title='VGG-11')
+
+    with open(ROOT_PATH + 'a4_ex1_results.json', 'w') as fp:
+        json.dump(results, fp)
+
+    # save the model
+    torch.save(vgg11.state_dict(), ROOT_PATH + 'model.pt')
 
 
 if __name__ == '__main__':
