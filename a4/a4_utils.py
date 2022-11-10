@@ -3,7 +3,6 @@ import tqdm as tqdm
 import matplotlib.pyplot as plt
 import time
 
-
 def plot_results(results, filename, path, title):
     plt.plot(results['train_accuracy'], '-o', label='train accuracy')
     plt.plot(results['test_accuracy'], '-o', label='test accuracy')
@@ -23,33 +22,31 @@ def plot_results(results, filename, path, title):
     plt.legend()
     plt.savefig(path + 'loss_' + filename)
     plt.show()
-
-
-def collect_metrics(model, test_loader, criterion, device):
-    model.eval()
-
-    def run_metrics(model, loader, device):
-        correct = 0
-        total = 0
-        running_loss = 0.0
-        with torch.no_grad():
-            for x, y in loader:
-                x = x.to(device)
-                y = y.to(device)
-                output = model(x)
-                _, predicted = torch.max(output.data, 1)
-                total += y.size(0)
-                correct += (predicted == y).sum().item()
-                # compute the loss too
+def run_metrics(model, loader, device, criterion=None):
+    correct = 0
+    total = 0
+    running_loss = 0.0
+    with torch.no_grad():
+        for x, y in loader:
+            x = x.to(device)
+            y = y.to(device)
+            output = model(x)
+            _, predicted = torch.max(output.data, 1)
+            total += y.size(0)
+            correct += (predicted == y).sum().item()
+            # compute the loss too
+            if criterion is not None:
                 loss = criterion(output, y)
                 running_loss += loss.item()
-
         average_loss = running_loss / len(loader)
         return {'accuracy': correct / total, 'loss': average_loss}
 
-    metrics_test = run_metrics(model, test_loader, device)
-
-    print(f"Test loss: {metrics_test['loss']:.3f}, test accuracy: {metrics_test['accuracy'] * 100:.3f}%")
+def collect_metrics(model, test_loader, device, criterion=None):
+    model.eval()
+    metrics_test = run_metrics(model, test_loader, device, criterion=criterion)
+    if criterion is not None:
+        print(f"Test loss: {metrics_test['loss']:.3f}")
+    print(f"Test accuracy: {metrics_test['accuracy'] * 100:.3f}%")
     return metrics_test
 
 
@@ -84,7 +81,7 @@ def train(model, train_loader, test_loader, optimizer, criterion, device, num_ep
         print(f"Epoch {epoch + 1} of {num_epochs} - Training loss: {loss:.3f}, train accuracy: {accuracy * 100:.3f}%")
 
         # test the model
-        test_results = collect_metrics(model, test_loader, criterion, device)
+        test_results = collect_metrics(model, test_loader, device, criterion)
         accuracies_train.append(accuracy)
         loss_train.append(loss)
         accuracies_test.append(test_results['accuracy'])

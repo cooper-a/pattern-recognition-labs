@@ -9,8 +9,8 @@ import pathlib
 
 ROOT_PATH = str(pathlib.Path(__file__).parent.resolve() / 'ex2_outputs') + "/"
 NUM_EPOCHS = 20
-LEARNING_RATE = 0.01
-BATCH_SIZE = 64
+LEARNING_RATE = 0.1
+BATCH_SIZE = 128
 
 
 class Net(nn.Module):
@@ -20,8 +20,20 @@ class Net(nn.Module):
     def __init__(self):
         super().__init__()
 
+        # self.layers = nn.Sequential(
+        #     nn.Linear(784, 512),
+        #     nn.ReLU(),
+        #     nn.Linear(512, 512),
+        #     nn.BatchNorm1d(512),
+        #     nn.ReLU(),
+        #     nn.Linear(512, 10)
+        # )
+
         self.layers = nn.Sequential(
             nn.Linear(784, 512),
+            nn.ReLU(),
+            nn.Linear(512, 512),
+            nn.BatchNorm1d(512),
             nn.ReLU(),
             nn.Linear(512, 512),
             nn.BatchNorm1d(512),

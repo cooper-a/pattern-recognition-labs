@@ -3,8 +3,9 @@ import torch.nn as nn
 import torch.utils.data as data
 import torchvision.datasets as datasets
 import torchvision.transforms
+import matplotlib.pyplot as plt
 import json
-from a4_utils import plot_results, train
+from a4_utils import plot_results, train, collect_metrics
 import pathlib
 
 ROOT_PATH = str(pathlib.Path(__file__).parent.resolve() / 'ex1_outputs') + "/"
@@ -78,9 +79,16 @@ def main():
     train_loader = torch.utils.data.DataLoader(mnist_trainset, batch_size=BATCH_SIZE, shuffle=True)
     test_loader = torch.utils.data.DataLoader(mnist_testset, batch_size=BATCH_SIZE, shuffle=True)
 
+    # SGD optimizer
     # optimizer = torch.optim.SGD(vgg11.parameters(), lr=LEARNING_RATE, momentum=0.9)
+
+    # try rmsprop
+    # optimizer = torch.optim.RMSprop(vgg11.parameters(), lr=LEARNING_RATE, momentum=0.9)
+
     # try adam optimizer
     optimizer = torch.optim.Adam(vgg11.parameters(), lr=LEARNING_RATE)
+
+
 
     criterion = nn.CrossEntropyLoss()
     results = train(vgg11, train_loader, test_loader, optimizer, criterion, device, NUM_EPOCHS)
@@ -93,6 +101,93 @@ def main():
     # save the model
     torch.save(vgg11.state_dict(), ROOT_PATH + 'model.pt')
 
+    # horizontal flip Test
+    transforms_horizontal_flip = torchvision.transforms.Compose([
+        torchvision.transforms.Resize((32, 32)),
+        torchvision.transforms.RandomHorizontalFlip(p=1),
+        torchvision.transforms.ToTensor()
+    ])
+
+    mnist_testset_horizontal_flip = datasets.MNIST(root='./data', train=False, download=True, transform=transforms_horizontal_flip)
+    mnist_testloader_horizontal_flip = torch.utils.data.DataLoader(mnist_testset_horizontal_flip, batch_size=BATCH_SIZE, shuffle=True)
+    print("Horizontal flip")
+    collect_metrics(vgg11, mnist_testloader_horizontal_flip, device)
+
+    # vertical flip Test
+    transforms_vertical_flip = torchvision.transforms.Compose([
+        torchvision.transforms.Resize((32, 32)),
+        torchvision.transforms.RandomVerticalFlip(p=1),
+        torchvision.transforms.ToTensor()
+    ])
+
+    mnist_testset_vertical_flip = datasets.MNIST(root='./data', train=False, download=True, transform=transforms_vertical_flip)
+    mnist_testloader_vertical_flip = torch.utils.data.DataLoader(mnist_testset_vertical_flip, batch_size=BATCH_SIZE,
+                                                                   shuffle=True)
+    print("Vertical flip")
+    collect_metrics(vgg11, mnist_testloader_vertical_flip, device)
+
+    # Show some images that are vertical flipped
+    # vertical_flip = torchvision.transforms.Compose([
+    #     torchvision.transforms.Resize((32, 32)),
+    #     torchvision.transforms.RandomVerticalFlip(p=1),
+    # ])
+    # vertical_flipped = datasets.MNIST(root='./data', train=False, download=True, transform=vertical_flip)
+    #
+    # for i in range(10):
+    #     print(vertical_flipped[i][1])
+    #     im = vertical_flipped[i][0]
+    #     plt.imshow(im)
+    #     plt.gray()
+    #     plt.show()
+
+    # Show some images that are horizontal flipped
+    # horizontal_flip = torchvision.transforms.Compose([
+    #     torchvision.transforms.Resize((32, 32)),
+    #     torchvision.transforms.RandomHorizontalFlip(p=1),
+    # ])
+    # horizontal_flipped = datasets.MNIST(root='./data', train=False, download=True, transform=horizontal_flip)
+    #
+    # for i in range(10):
+    #   print(horizontal_flipped[i][1])
+    #   im = horizontal_flipped[i][0]
+    #   plt.imshow(im)
+    #   plt.gray()
+    #   plt.show()
+
+    # Gaussian Blur Test
+    transforms_gaussian_blur = torchvision.transforms.Compose([
+        torchvision.transforms.Resize((32, 32)),
+        torchvision.transforms.GaussianBlur(kernel_size=3, sigma=(0.1, 2.0)),
+        torchvision.transforms.ToTensor()
+    ])
+
+    mnist_testset_gaussian_blur = datasets.MNIST(root='./data', train=False, download=True, transform=transforms_gaussian_blur)
+    mnist_testloader_gaussian_blur = torch.utils.data.DataLoader(mnist_testset_gaussian_blur, batch_size=BATCH_SIZE,
+                                                                 shuffle=True)
+    print("Gaussian blur")
+    collect_metrics(vgg11, mnist_testloader_gaussian_blur, device)
+
+    # Show some images that are gaussian blurred
+    # gaussian_blur = torchvision.transforms.Compose([
+    #     torchvision.transforms.Resize((32, 32)),
+    #     torchvision.transforms.GaussianBlur(kernel_size=5, sigma=(1.0, 3.0)),
+    # ])
+    # gaussian_blurred = datasets.MNIST(root='./data', train=False, download=True, transform=gaussian_blur)
+    #
+    # regular = torchvision.transforms.Compose([
+    #     torchvision.transforms.Resize((32, 32)),
+    # ])
+    # regular_loader = datasets.MNIST(root='./data', train=False, download=True, transform=regular)
+    # for i in range(10):
+    #   print(gaussian_blurred[i][1])
+    #   im = gaussian_blurred[i][0]
+    #   plt.imshow(im)
+    #   plt.gray()
+    #   plt.show()
+    #   im = regular_loader[i][0]
+    #   plt.imshow(im)
+    #   plt.gray()
+    #   plt.show()
 
 if __name__ == '__main__':
     main()
