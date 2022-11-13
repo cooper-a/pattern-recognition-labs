@@ -2,6 +2,7 @@ import torch
 import tqdm as tqdm
 import matplotlib.pyplot as plt
 import time
+import json
 
 def plot_results(results, filename, path, title):
     plt.plot(results['train_accuracy'], '-o', label='train accuracy')
@@ -49,6 +50,10 @@ def collect_metrics(model, test_loader, device, criterion=None):
     print(f"Test accuracy: {metrics_test['accuracy'] * 100:.3f}%")
     return metrics_test
 
+def store_results(title, results, path):
+    plot_results(results, title + '.png', path, title='VGG-11')
+    with open(title + '.json', 'w') as fp:
+        json.dump(results, fp)
 
 def train(model, train_loader, test_loader, optimizer, criterion, device, num_epochs):
     accuracies_train = []
