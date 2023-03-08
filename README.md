@@ -9,5 +9,5 @@ a3 - Non-Parametric Estimation and K-means clustering
 a4 - CNNs and MLPs
 
 
-Author: Cooper Ang
+Author: Cooper Ang  
 Coursework for SYDE 572 (Introduction to Pattern Recognition)
